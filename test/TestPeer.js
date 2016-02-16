@@ -389,7 +389,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 		var _g = this;
 		if(cur < ids.length) {
 			var id = ids[cur];
-			var peers = new roi_js_Peers(this.key).create(id,function(_) {
+			this.peers = new roi_js_Peers(this.key).create(id,function(_) {
 				haxe_Log.trace(" -> got this one " + id + " c:",{ fileName : "Main.hx", lineNumber : 27, className : "Main", methodName : "tryId"});
 				_g.peers.addCommand("say",function(t) {
 					haxe_Log.trace(" -> " + t.id + " said " + t.text,{ fileName : "Main.hx", lineNumber : 28, className : "Main", methodName : "tryId"});
