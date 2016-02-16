@@ -384,7 +384,7 @@ Main.__name__ = true;
 Main.__super__ = luxe_Game;
 Main.prototype = $extend(luxe_Game.prototype,{
 	ready: function() {
-		this.mon = new luxe_Text({ pos : new phoenix_Vector(0,0), align : 0, color : new phoenix_Color().rgb(this.color), point_size : 18, text : "Alone"});
+		this.mon = new luxe_Text({ pos : new phoenix_Vector(0,0), align : 0, color : new phoenix_Color().rgb(this.color), point_size : 14, text : "Alone"});
 		var ids = ["1","2","3","4","5","6","7"];
 		this.tryId(ids,0);
 	}
