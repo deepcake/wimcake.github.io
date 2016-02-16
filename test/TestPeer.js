@@ -382,33 +382,37 @@ Main.__name__ = true;
 Main.__super__ = luxe_Game;
 Main.prototype = $extend(luxe_Game.prototype,{
 	ready: function() {
+		var ids = ["1","2","3","4","5","6"];
+		this.tryId(ids,0);
+	}
+	,tryId: function(ids,cur) {
+		var _g = this;
+		if(cur < ids.length) {
+			var id = ids[cur];
+			var peers = new roi_js_Peers(this.key).create(id,function(_) {
+				haxe_Log.trace(" -> got this one " + id + " c:",{ fileName : "Main.hx", lineNumber : 27, className : "Main", methodName : "tryId"});
+				_g.peers.addCommand("say",function(t) {
+					haxe_Log.trace(" -> " + t.id + " said " + t.text,{ fileName : "Main.hx", lineNumber : 28, className : "Main", methodName : "tryId"});
+				});
+			},function(_1) {
+				_g.tryId(ids,++cur);
+			});
+		} else haxe_Log.trace(" -> no free id :c",{ fileName : "Main.hx", lineNumber : 37, className : "Main", methodName : "tryId"});
 	}
 	,onkeydown: function(event) {
 		var _g1 = this;
 		var _g = event.keycode;
 		switch(_g) {
-		case 119:
-			this.peers2.send("1","test",{ text : "Hi!"});
-			break;
-		case 113:
-			this.peers1.send("2","test",{ text : "Hi!"});
-			break;
 		case 49:
-			this.peers1 = new roi_js_Peers(this.key).create("1");
-			this.peers1.commands.set("test",function(t) {
-				haxe_Log.trace("" + t.id + " said " + t.text,{ fileName : "Main.hx", lineNumber : 28, className : "Main", methodName : "onkeydown"});
-			});
+			this.peers.sendToAll("say","Hi there!");
 			break;
 		case 50:
-			this.peers2 = new roi_js_Peers(this.key).create("2",function(_) {
-				_g1.peers2.connect("1");
-			});
-			this.peers2.commands.set("test",function(t1) {
-				haxe_Log.trace("" + t1.id + " said " + t1.text,{ fileName : "Main.hx", lineNumber : 32, className : "Main", methodName : "onkeydown"});
-			});
+			Luxe.timer.schedule(5.0,function() {
+				_g1.peers.sendToAll("ping",{ ping : new Date().getTime()});
+			},true);
 			break;
 		default:
-			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 36, className : "Main", methodName : "onkeydown"});
+			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 56, className : "Main", methodName : "onkeydown"});
 		}
 	}
 	,onkeyup: function(e) {
@@ -10713,6 +10717,8 @@ var roi_js_Peers = function(key) {
 	this.commands = new haxe_ds_StringMap();
 	this.connections = new haxe_ds_StringMap();
 	this.key = key;
+	this.addCommand("ping",$bind(this,this.receivePing));
+	this.addCommand("pong",$bind(this,this.receivePong));
 };
 $hxClasses["roi.js.Peers"] = roi_js_Peers;
 roi_js_Peers.__name__ = true;
@@ -10722,18 +10728,14 @@ roi_js_Peers.prototype = {
 		this.addPeer(this.peer,success,fail);
 		return this;
 	}
-	,connect: function(id) {
-		var c = this.peer.connect(id,{ });
-		this.addCon(c);
-	}
 	,addPeer: function(p,success,fail) {
 		var _g = this;
 		p.on("open",function(data) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer opened",{ fileName : "Peers.hx", lineNumber : 82, className : "roi.js.Peers", methodName : "addPeer"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer opened",{ fileName : "Peers.hx", lineNumber : 83, className : "roi.js.Peers", methodName : "addPeer"});
 			if(success != null) success();
 		});
 		p.on("close",function(data1) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer closed",{ fileName : "Peers.hx", lineNumber : 87, className : "roi.js.Peers", methodName : "addPeer"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer closed",{ fileName : "Peers.hx", lineNumber : 88, className : "roi.js.Peers", methodName : "addPeer"});
 			p.removeListener("close");
 			p.removeListener("error");
 			p.removeListener("connection");
@@ -10742,14 +10744,14 @@ roi_js_Peers.prototype = {
 			if(fail != null) fail();
 		});
 		p.on("error",function(err) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer error " + Std.string(err.type) + " " + Std.string(err),{ fileName : "Peers.hx", lineNumber : 100, className : "roi.js.Peers", methodName : "addPeer"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer error " + Std.string(err.type) + " " + Std.string(err),{ fileName : "Peers.hx", lineNumber : 101, className : "roi.js.Peers", methodName : "addPeer"});
 		});
 		p.on("connection",function(c) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer " + c.peer + " connected to me",{ fileName : "Peers.hx", lineNumber : 104, className : "roi.js.Peers", methodName : "addPeer"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer " + c.peer + " connected to me",{ fileName : "Peers.hx", lineNumber : 105, className : "roi.js.Peers", methodName : "addPeer"});
 			_g.addCon(c);
 		});
 		p.on("disconnected",function() {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer disconnected",{ fileName : "Peers.hx", lineNumber : 109, className : "roi.js.Peers", methodName : "addPeer"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer disconnected",{ fileName : "Peers.hx", lineNumber : 110, className : "roi.js.Peers", methodName : "addPeer"});
 		});
 		return p;
 	}
@@ -10757,18 +10759,18 @@ roi_js_Peers.prototype = {
 		var _g = this;
 		this.connections.set(c.peer,c);
 		c.on("open",function() {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> con open",{ fileName : "Peers.hx", lineNumber : 122, className : "roi.js.Peers", methodName : "addCon"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> con opened with " + c.peer,{ fileName : "Peers.hx", lineNumber : 123, className : "roi.js.Peers", methodName : "addCon"});
 		});
 		c.on("close",function() {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> con close",{ fileName : "Peers.hx", lineNumber : 127, className : "roi.js.Peers", methodName : "addCon"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> con closed with " + c.peer,{ fileName : "Peers.hx", lineNumber : 128, className : "roi.js.Peers", methodName : "addCon"});
 			_g.removeCon(c);
 		});
 		c.on("data",function(data) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> con data received",{ fileName : "Peers.hx", lineNumber : 132, className : "roi.js.Peers", methodName : "addCon"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> con data received",{ fileName : "Peers.hx", lineNumber : 133, className : "roi.js.Peers", methodName : "addCon"});
 			_g.receive(data);
 		});
 		c.on("error",function(err) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> con error " + Std.string(err.type),{ fileName : "Peers.hx", lineNumber : 137, className : "roi.js.Peers", methodName : "addCon"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> con error " + Std.string(err.type),{ fileName : "Peers.hx", lineNumber : 138, className : "roi.js.Peers", methodName : "addCon"});
 		});
 	}
 	,removeCon: function(c) {
@@ -10792,12 +10794,33 @@ roi_js_Peers.prototype = {
 			return $r;
 		}(this)))(data);
 	}
+	,addCommand: function(cmd,cb) {
+		this.commands.set(cmd,cb);
+	}
+	,sendToAll: function(cmd,data) {
+		if(this.peer == null) return;
+		data.cmd = cmd;
+		data.id = this.peer.id;
+		data.seq = ++roi_js_Peers._sequence;
+		var $it0 = this.connections.iterator();
+		while( $it0.hasNext() ) {
+			var c = $it0.next();
+			c.send(data);
+		}
+	}
 	,send: function(to,cmd,data) {
 		if(this.peer == null) return;
 		data.cmd = cmd;
 		data.id = this.peer.id;
 		data.seq = ++roi_js_Peers._sequence;
 		this.connections.get(to).send(data);
+	}
+	,receivePing: function(data) {
+		haxe_Log.trace("peer#" + this.peer.id + "  -> #" + Std.string(data.id) + ": ping " + (new Date().getTime() - data.ping),{ fileName : "Peers.hx", lineNumber : 202, className : "roi.js.Peers", methodName : "receivePing"});
+		this.send(data.id,"pong",{ ping : data.ping, pong : new Date().getTime()});
+	}
+	,receivePong: function(data) {
+		haxe_Log.trace("peer#" + this.peer.id + "  -> #" + Std.string(data.id) + ": ping " + (data.pong - data.ping) + " pong " + (new Date().getTime() - data.pong) + " (" + (new Date().getTime() - data.ping) + ")",{ fileName : "Peers.hx", lineNumber : 209, className : "roi.js.Peers", methodName : "receivePong"});
 	}
 	,__class__: roi_js_Peers
 };
