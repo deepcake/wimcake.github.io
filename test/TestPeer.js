@@ -398,6 +398,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 					haxe_Log.trace(" -> #" + t.id + " said " + t.text,{ fileName : "Main.hx", lineNumber : 53, className : "Main", methodName : "tryId"});
 				});
 				_g.peers.addCommand("mov",$bind(_g,_g.movCb));
+				_g.neighbors.set(id,{ x : 0, y : 0, color : _g.color});
 				_g.peers.onConnect.add(function(neighbor) {
 					_g.neighbors.set(neighbor,{ x : 0, y : 0, color : 8421504});
 					_g.mon.set_text("Peers:\n");
@@ -432,7 +433,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 			},function(_1) {
 				_g.tryId(ids,++cur);
 			});
-		} else haxe_Log.trace(" -> no free id :c",{ fileName : "Main.hx", lineNumber : 84, className : "Main", methodName : "tryId"});
+		} else haxe_Log.trace(" -> no free id :c",{ fileName : "Main.hx", lineNumber : 86, className : "Main", methodName : "tryId"});
 	}
 	,onkeydown: function(event) {
 		var _g1 = this;
@@ -447,7 +448,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 			},true);
 			break;
 		default:
-			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 103, className : "Main", methodName : "onkeydown"});
+			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 105, className : "Main", methodName : "onkeydown"});
 		}
 	}
 	,onkeyup: function(e) {
