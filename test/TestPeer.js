@@ -437,7 +437,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 	,movCb: function(d) {
 		if(!this.neighbors.exists(d.id)) this.neighbors.set(d.id,{ x : d.x, y : d.y, color : d.color});
 		var n = this.neighbors.get(d.id);
-		this.render(n.x,n.y,d.x,d.y,n.color);
+		this.render(n.x,n.y,d.x,d.y,d.color);
 		n.x = d.x;
 		n.y = d.y;
 		n.color = d.color;
