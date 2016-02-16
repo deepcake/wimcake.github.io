@@ -390,14 +390,21 @@ Main.prototype = $extend(luxe_Game.prototype,{
 		if(cur < ids.length) {
 			var id = ids[cur];
 			this.peers = new roi_js_Peers(this.key).create(id,function(_) {
-				haxe_Log.trace(" -> got this one " + id + " c:",{ fileName : "Main.hx", lineNumber : 27, className : "Main", methodName : "tryId"});
+				haxe_Log.trace(" -> got this one #" + id + " c:",{ fileName : "Main.hx", lineNumber : 27, className : "Main", methodName : "tryId"});
 				_g.peers.addCommand("say",function(t) {
 					haxe_Log.trace(" -> " + t.id + " said " + t.text,{ fileName : "Main.hx", lineNumber : 28, className : "Main", methodName : "tryId"});
 				});
+				var _g1 = 0;
+				while(_g1 < ids.length) {
+					var i = ids[_g1];
+					++_g1;
+					if(i == id) continue;
+					_g.peers.connect(i);
+				}
 			},function(_1) {
 				_g.tryId(ids,++cur);
 			});
-		} else haxe_Log.trace(" -> no free id :c",{ fileName : "Main.hx", lineNumber : 37, className : "Main", methodName : "tryId"});
+		} else haxe_Log.trace(" -> no free id :c",{ fileName : "Main.hx", lineNumber : 44, className : "Main", methodName : "tryId"});
 	}
 	,onkeydown: function(event) {
 		var _g1 = this;
@@ -412,7 +419,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 			},true);
 			break;
 		default:
-			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 56, className : "Main", methodName : "onkeydown"});
+			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 63, className : "Main", methodName : "onkeydown"});
 		}
 	}
 	,onkeyup: function(e) {
@@ -10727,6 +10734,10 @@ roi_js_Peers.prototype = {
 		this.peer = new Peer(id,{ key : this.key, config : { iceServers : roi_js_Peers.ICESERVERS}});
 		this.addPeer(this.peer,success,fail);
 		return this;
+	}
+	,connect: function(id) {
+		var c = this.peer.connect(id,{ });
+		this.addCon(c);
 	}
 	,addPeer: function(p,success,fail) {
 		var _g = this;
