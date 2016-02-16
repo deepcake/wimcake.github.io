@@ -384,7 +384,7 @@ Main.__name__ = true;
 Main.__super__ = luxe_Game;
 Main.prototype = $extend(luxe_Game.prototype,{
 	ready: function() {
-		this.mon = new luxe_Text({ pos : new phoenix_Vector(0,0), align : 0, color : new phoenix_Color().rgb(61680), point_size : 18});
+		this.mon = new luxe_Text({ pos : new phoenix_Vector(0,0), align : 0, color : new phoenix_Color().rgb(this.color), point_size : 18});
 		var ids = ["1","2","3","4","5","6","7"];
 		this.tryId(ids,0);
 	}
@@ -400,8 +400,13 @@ Main.prototype = $extend(luxe_Game.prototype,{
 				_g.peers.addCommand("mov",$bind(_g,_g.movCb));
 				_g.peers.addCommand("meet",function(t1) {
 					haxe_Log.trace("nice to meet you, #" + t1.id,{ fileName : "Main.hx", lineNumber : 55, className : "Main", methodName : "tryId"});
-					var _g1 = _g.mon;
-					_g1.set_text(_g1.get_text() + ("#" + t1.id + "\n"));
+					_g.mon.set_text("Peers:\n");
+					var $it0 = _g.neighbors.keys();
+					while( $it0.hasNext() ) {
+						var k = $it0.next();
+						var _g1 = _g.mon;
+						_g1.set_text(_g1.get_text() + (" #" + k + "\n"));
+					}
 				});
 				_g.peers.onConnect.add(function(neighbor) {
 					_g.peers.send(neighbor,"meet",{ color : _g.color});
@@ -416,7 +421,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 			},function(_1) {
 				_g.tryId(ids,++cur);
 			});
-		} else haxe_Log.trace(" -> no free id :c",{ fileName : "Main.hx", lineNumber : 77, className : "Main", methodName : "tryId"});
+		} else haxe_Log.trace(" -> no free id :c",{ fileName : "Main.hx", lineNumber : 78, className : "Main", methodName : "tryId"});
 	}
 	,onkeydown: function(event) {
 		var _g1 = this;
@@ -431,7 +436,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 			},true);
 			break;
 		default:
-			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 96, className : "Main", methodName : "onkeydown"});
+			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 97, className : "Main", methodName : "onkeydown"});
 		}
 	}
 	,onkeyup: function(e) {
