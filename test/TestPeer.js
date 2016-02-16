@@ -384,7 +384,8 @@ Main.__name__ = true;
 Main.__super__ = luxe_Game;
 Main.prototype = $extend(luxe_Game.prototype,{
 	ready: function() {
-		var ids = ["1","2","3","4","5","6"];
+		this.mon = new luxe_Text({ pos : new phoenix_Vector(0,0), align : 0, color : new phoenix_Color().rgb(61680), point_size : 18});
+		var ids = ["1","2","3","4","5","6","7"];
 		this.tryId(ids,0);
 	}
 	,tryId: function(ids,cur) {
@@ -392,37 +393,45 @@ Main.prototype = $extend(luxe_Game.prototype,{
 		if(cur < ids.length) {
 			var id = ids[cur];
 			this.peers = new roi_js_Peers(this.key).create(id,function(_) {
-				haxe_Log.trace(" -> got this one #" + id + " c:",{ fileName : "Main.hx", lineNumber : 37, className : "Main", methodName : "tryId"});
+				haxe_Log.trace(" -> got this one #" + id + " c:",{ fileName : "Main.hx", lineNumber : 51, className : "Main", methodName : "tryId"});
 				_g.peers.addCommand("say",function(t) {
-					haxe_Log.trace(" -> " + t.id + " said " + t.text,{ fileName : "Main.hx", lineNumber : 38, className : "Main", methodName : "tryId"});
+					haxe_Log.trace(" -> #" + t.id + " said " + t.text,{ fileName : "Main.hx", lineNumber : 52, className : "Main", methodName : "tryId"});
 				});
 				_g.peers.addCommand("mov",$bind(_g,_g.movCb));
-				var _g1 = 0;
-				while(_g1 < ids.length) {
-					var i = ids[_g1];
-					++_g1;
+				_g.peers.addCommand("meet",function(t1) {
+					haxe_Log.trace("nice to meet you, #" + t1.id,{ fileName : "Main.hx", lineNumber : 55, className : "Main", methodName : "tryId"});
+					var _g1 = _g.mon;
+					_g1.set_text(_g1.get_text() + ("#" + t1.id + "\n"));
+				});
+				_g.peers.onConnect.add(function(neighbor) {
+					_g.peers.send(neighbor,"meet",{ color : _g.color});
+				});
+				var _g11 = 0;
+				while(_g11 < ids.length) {
+					var i = ids[_g11];
+					++_g11;
 					if(i == id) continue;
 					_g.peers.connect(i);
 				}
 			},function(_1) {
 				_g.tryId(ids,++cur);
 			});
-		} else haxe_Log.trace(" -> no free id :c",{ fileName : "Main.hx", lineNumber : 55, className : "Main", methodName : "tryId"});
+		} else haxe_Log.trace(" -> no free id :c",{ fileName : "Main.hx", lineNumber : 77, className : "Main", methodName : "tryId"});
 	}
 	,onkeydown: function(event) {
 		var _g1 = this;
 		var _g = event.keycode;
 		switch(_g) {
 		case 49:
-			this.peers.sendToAll("say",{ text : "Hi there!"});
+			this.peers.broadcast("say",{ text : "Hi there!"});
 			break;
 		case 50:
 			Luxe.timer.schedule(5.0,function() {
-				_g1.peers.sendToAll("ping",{ ping : new Date().getTime()});
+				_g1.peers.broadcast("ping",{ ping : new Date().getTime()});
 			},true);
 			break;
 		default:
-			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 74, className : "Main", methodName : "onkeydown"});
+			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 96, className : "Main", methodName : "onkeydown"});
 		}
 	}
 	,onkeyup: function(e) {
@@ -430,17 +439,16 @@ Main.prototype = $extend(luxe_Game.prototype,{
 	}
 	,onmousemove: function(e) {
 		if(this.peers != null) {
-			this.peers.sendToAll("mov",{ x : e.x, y : e.y, color : this.color});
+			this.peers.broadcast("mov",{ x : e.x, y : e.y, color : this.color});
 			this.movCb({ id : this.peers.peer.id, x : e.x, y : e.y, color : this.color});
 		}
 	}
 	,movCb: function(d) {
-		if(!this.neighbors.exists(d.id)) this.neighbors.set(d.id,{ x : d.x, y : d.y, color : d.color});
+		if(!this.neighbors.exists(d.id)) this.neighbors.set(d.id,{ x : d.x, y : d.y, color : this.color});
 		var n = this.neighbors.get(d.id);
-		this.render(n.x,n.y,d.x,d.y,d.color);
+		this.render(n.x,n.y,d.x,d.y,n.color);
 		n.x = d.x;
 		n.y = d.y;
-		n.color = d.color;
 	}
 	,render: function(x1,y1,x2,y2,color) {
 		var g = Luxe.draw.line({ p0 : new phoenix_Vector(x1,y1), p1 : new phoenix_Vector(x2,y2), color : new phoenix_Color().rgb(color)});
@@ -487,6 +495,14 @@ Reflect.fields = function(o) {
 		}
 	}
 	return a;
+};
+Reflect.isFunction = function(f) {
+	return typeof(f) == "function" && !(f.__name__ || f.__ename__);
+};
+Reflect.compareMethods = function(f1,f2) {
+	if(f1 == f2) return true;
+	if(!Reflect.isFunction(f1) || !Reflect.isFunction(f2)) return false;
+	return f1.scope == f2.scope && f1.method == f2.method && f1.method != null;
 };
 var Std = function() { };
 $hxClasses["Std"] = Std;
@@ -4401,7 +4417,10 @@ $hxClasses["luxe.Text"] = luxe_Text;
 luxe_Text.__name__ = true;
 luxe_Text.__super__ = luxe_Visual;
 luxe_Text.prototype = $extend(luxe_Visual.prototype,{
-	set_text: function(_s) {
+	get_text: function() {
+		return this.geom.text;
+	}
+	,set_text: function(_s) {
 		return this.geom.set_text(_s);
 	}
 	,get_bounds: function() {
@@ -4491,7 +4510,7 @@ luxe_Text.prototype = $extend(luxe_Visual.prototype,{
 		luxe_Visual.prototype.ondestroy.call(this);
 	}
 	,__class__: luxe_Text
-	,__properties__: $extend(luxe_Visual.prototype.__properties__,{get_align_vertical:"get_align_vertical",get_align:"get_align",set_bounds:"set_bounds",get_bounds:"get_bounds",set_text:"set_text"})
+	,__properties__: $extend(luxe_Visual.prototype.__properties__,{get_align_vertical:"get_align_vertical",get_align:"get_align",set_bounds:"set_bounds",get_bounds:"get_bounds",set_text:"set_text",get_text:"get_text"})
 });
 var luxe_Timer = function(_core) {
 	this.core = _core;
@@ -10797,6 +10816,8 @@ phoenix_geometry_Vertex.prototype = {
 	__class__: phoenix_geometry_Vertex
 };
 var roi_js_Peers = function(key) {
+	this.onDisconnect = new roi_signals_Signal1();
+	this.onConnect = new roi_signals_Signal1();
 	this.commands = new haxe_ds_StringMap();
 	this.connections = new haxe_ds_StringMap();
 	this.key = key;
@@ -10811,18 +10832,18 @@ roi_js_Peers.prototype = {
 		this.addPeer(this.peer,success,fail);
 		return this;
 	}
-	,connect: function(id,success) {
+	,connect: function(id) {
 		var c = this.peer.connect(id,{ });
-		this.addCon(c,success);
+		this.addCon(c);
 	}
 	,addPeer: function(p,success,fail) {
 		var _g = this;
 		p.on("open",function(data) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer opened",{ fileName : "Peers.hx", lineNumber : 83, className : "roi.js.Peers", methodName : "addPeer"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer opened",{ fileName : "Peers.hx", lineNumber : 88, className : "roi.js.Peers", methodName : "addPeer"});
 			if(success != null) success();
 		});
 		p.on("close",function(data1) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer closed",{ fileName : "Peers.hx", lineNumber : 88, className : "roi.js.Peers", methodName : "addPeer"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer closed",{ fileName : "Peers.hx", lineNumber : 93, className : "roi.js.Peers", methodName : "addPeer"});
 			p.removeListener("close");
 			p.removeListener("error");
 			p.removeListener("connection");
@@ -10834,38 +10855,39 @@ roi_js_Peers.prototype = {
 			var _g1 = err.type;
 			switch(_g1) {
 			case "peer-unavailable":
-				haxe_Log.trace("peer#" + _g.peer.id + "  -> peer error " + Std.string(err.type) + " " + Std.string(err),{ fileName : "Peers.hx", lineNumber : 104, className : "roi.js.Peers", methodName : "addPeer"});
+				haxe_Log.trace("peer#" + _g.peer.id + "  -> peer error " + Std.string(err.type) + " " + Std.string(err),{ fileName : "Peers.hx", lineNumber : 109, className : "roi.js.Peers", methodName : "addPeer"});
 				break;
 			default:
-				haxe_Log.trace("peer#" + _g.peer.id + "  -> peer error " + Std.string(err.type) + " " + Std.string(err),{ fileName : "Peers.hx", lineNumber : 106, className : "roi.js.Peers", methodName : "addPeer"});
+				haxe_Log.trace("peer#" + _g.peer.id + "  -> peer error " + Std.string(err.type) + " " + Std.string(err),{ fileName : "Peers.hx", lineNumber : 111, className : "roi.js.Peers", methodName : "addPeer"});
 			}
 		});
 		p.on("connection",function(c) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer #" + c.peer + " connected to me",{ fileName : "Peers.hx", lineNumber : 111, className : "roi.js.Peers", methodName : "addPeer"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer #" + c.peer + " connected to me",{ fileName : "Peers.hx", lineNumber : 116, className : "roi.js.Peers", methodName : "addPeer"});
 			_g.addCon(c);
 		});
 		p.on("disconnected",function() {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer disconnected",{ fileName : "Peers.hx", lineNumber : 116, className : "roi.js.Peers", methodName : "addPeer"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer disconnected",{ fileName : "Peers.hx", lineNumber : 121, className : "roi.js.Peers", methodName : "addPeer"});
 		});
 		return p;
 	}
-	,addCon: function(c,success) {
+	,addCon: function(c) {
 		var _g = this;
 		c.on("open",function() {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> con opened with #" + c.peer,{ fileName : "Peers.hx", lineNumber : 127, className : "roi.js.Peers", methodName : "addCon"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> con opened with #" + c.peer,{ fileName : "Peers.hx", lineNumber : 132, className : "roi.js.Peers", methodName : "addCon"});
 			_g.connections.set(c.peer,c);
-			if(success != null) success(c.peer);
+			_g.onConnect.execute(c.peer);
 		});
 		c.on("close",function() {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> con closed with #" + c.peer,{ fileName : "Peers.hx", lineNumber : 133, className : "roi.js.Peers", methodName : "addCon"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> con closed with #" + c.peer,{ fileName : "Peers.hx", lineNumber : 138, className : "roi.js.Peers", methodName : "addCon"});
+			_g.onDisconnect.execute(c.peer);
 			_g.removeCon(c);
 		});
 		c.on("data",function(data) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> con data received",{ fileName : "Peers.hx", lineNumber : 138, className : "roi.js.Peers", methodName : "addCon"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> con data received",{ fileName : "Peers.hx", lineNumber : 144, className : "roi.js.Peers", methodName : "addCon"});
 			_g.receive(data);
 		});
 		c.on("error",function(err) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> con error " + Std.string(err.type) + " " + Std.string(err),{ fileName : "Peers.hx", lineNumber : 143, className : "roi.js.Peers", methodName : "addCon"});
+			haxe_Log.trace("peer#" + _g.peer.id + "  -> con error " + Std.string(err.type) + " " + Std.string(err),{ fileName : "Peers.hx", lineNumber : 149, className : "roi.js.Peers", methodName : "addCon"});
 		});
 	}
 	,removeCon: function(c) {
@@ -10892,7 +10914,7 @@ roi_js_Peers.prototype = {
 	,addCommand: function(cmd,cb) {
 		this.commands.set(cmd,cb);
 	}
-	,sendToAll: function(cmd,data) {
+	,broadcast: function(cmd,data) {
 		if(this.peer == null) return;
 		data.cmd = cmd;
 		data.id = this.peer.id;
@@ -10906,7 +10928,7 @@ roi_js_Peers.prototype = {
 	,send: function(to,cmd,data) {
 		if(this.peer == null) return;
 		if(!this.connections.exists(to)) {
-			haxe_Log.trace("No connection with id #" + to,{ fileName : "Peers.hx", lineNumber : 188, className : "roi.js.Peers", methodName : "send"});
+			haxe_Log.trace("No connection with id #" + to,{ fileName : "Peers.hx", lineNumber : 194, className : "roi.js.Peers", methodName : "send"});
 			return;
 		}
 		data.cmd = cmd;
@@ -10915,14 +10937,83 @@ roi_js_Peers.prototype = {
 		this.connections.get(to).send(data);
 	}
 	,receivePing: function(data) {
-		haxe_Log.trace("peer#" + this.peer.id + "  -> #" + Std.string(data.id) + ": ping " + (new Date().getTime() - data.ping),{ fileName : "Peers.hx", lineNumber : 210, className : "roi.js.Peers", methodName : "receivePing"});
+		haxe_Log.trace("peer#" + this.peer.id + "  -> #" + Std.string(data.id) + ": ping " + (new Date().getTime() - data.ping),{ fileName : "Peers.hx", lineNumber : 216, className : "roi.js.Peers", methodName : "receivePing"});
 		this.send(data.id,"pong",{ ping : data.ping, pong : new Date().getTime()});
 	}
 	,receivePong: function(data) {
-		haxe_Log.trace("peer#" + this.peer.id + "  -> #" + Std.string(data.id) + ": ping " + (data.pong - data.ping) + " pong " + (new Date().getTime() - data.pong) + " (" + (new Date().getTime() - data.ping) + ")",{ fileName : "Peers.hx", lineNumber : 217, className : "roi.js.Peers", methodName : "receivePong"});
+		haxe_Log.trace("peer#" + this.peer.id + "  -> #" + Std.string(data.id) + ": ping " + (data.pong - data.ping) + " pong " + (new Date().getTime() - data.pong) + " (" + (new Date().getTime() - data.ping) + ")",{ fileName : "Peers.hx", lineNumber : 223, className : "roi.js.Peers", methodName : "receivePong"});
 	}
 	,__class__: roi_js_Peers
 };
+var roi_signals_Listener = function(f,once,priority) {
+	if(priority == null) priority = 0;
+	if(once == null) once = false;
+	this.f = f;
+	this.once = once;
+	this.priority = priority;
+};
+$hxClasses["roi.signals.Listener"] = roi_signals_Listener;
+roi_signals_Listener.__name__ = true;
+roi_signals_Listener.prototype = {
+	__class__: roi_signals_Listener
+};
+var roi_signals_Signal = function() {
+};
+$hxClasses["roi.signals.Signal"] = roi_signals_Signal;
+roi_signals_Signal.__name__ = true;
+roi_signals_Signal.prototype = {
+	add: function(f,priority) {
+		if(priority == null) priority = 0;
+		if(f != null && !this.has(f)) this.addListener(new roi_signals_Listener(f,false,priority));
+	}
+	,has: function(f) {
+		var listener = this.head;
+		while(listener != null) if(Reflect.compareMethods(listener.f,f)) return true; else listener = listener.next;
+		return false;
+	}
+	,addListener: function(listener) {
+		var prev = this.tail;
+		var next = null;
+		while(prev != null && listener.priority > prev.priority) {
+			next = prev;
+			prev = prev.prev;
+		}
+		if(prev != null) {
+			prev.next = listener;
+			listener.prev = prev;
+		} else this.head = listener;
+		if(next != null) {
+			next.prev = listener;
+			listener.next = next;
+		} else this.tail = listener;
+	}
+	,__class__: roi_signals_Signal
+};
+var roi_signals_Signal1 = function() {
+	roi_signals_Signal.call(this);
+};
+$hxClasses["roi.signals.Signal1"] = roi_signals_Signal1;
+roi_signals_Signal1.__name__ = true;
+roi_signals_Signal1.__super__ = roi_signals_Signal;
+roi_signals_Signal1.prototype = $extend(roi_signals_Signal.prototype,{
+	execute: function(value) {
+		var curr = this.head;
+		var next = null;
+		while(curr != null) {
+			next = curr.next;
+			curr.f(value);
+			if(curr.once) {
+				if(curr.prev != null) curr.prev.next = curr.next; else this.head = curr.next;
+				if(curr.next != null) curr.next.prev = curr.prev; else this.tail = curr.prev;
+				curr.f = null;
+				curr.next = null;
+				curr.prev = null;
+			}
+			curr = next;
+		}
+	}
+	,__class__: roi_signals_Signal1
+});
 var snow_Snow = function() {
 	this.is_ready = false;
 	this.was_ready = false;
