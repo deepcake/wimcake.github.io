@@ -399,29 +399,30 @@ Main.prototype = $extend(luxe_Game.prototype,{
 		roi_Logger.printer = function(str) {
 			_g.rmon.set_text("" + str);
 		};
-		roi_Logger.log("Ready");
+		roi_Logger.log(" -> ready");
+		this.peers = new roi_js_Peers(this.key);
 		this.tryId(this.ids,0);
 	}
 	,tryId: function(ids,cur) {
 		var _g = this;
 		if(cur < ids.length) {
 			var id = ids[cur];
-			this.peers = new roi_js_Peers(this.key).join(id,function(_) {
-				_g.mon.set_text("Alone");
-				haxe_Log.trace(" -> got this one #" + id + " c:",{ fileName : "Main.hx", lineNumber : 90, className : "Main", methodName : "tryId"});
+			this.peers.join(id,function(_) {
+				_g.mon.set_text("Alone (open in new tab for example)");
+				roi_Logger.log(" -> got this one #" + id + " c:");
 				_g.peers.addCommand("say",function(t) {
-					haxe_Log.trace(" -> #" + t.id + " said " + t.text,{ fileName : "Main.hx", lineNumber : 91, className : "Main", methodName : "tryId"});
+					haxe_Log.trace(" -> #" + t.id + " said " + t.text,{ fileName : "Main.hx", lineNumber : 95, className : "Main", methodName : "tryId"});
 				});
 				_g.peers.addCommand("mov",$bind(_g,_g.draw));
 				_g.neighbors.set(id,{ x : 0, y : 0, color : _g.color});
 				_g.peers.onConnect.add(function(neighbor) {
 					_g.neighbors.set(neighbor,{ x : 0, y : 0, color : 8421504});
-					_g.mon.set_text("Peers[" + Lambda.count(_g.neighbors) + "]: ");
+					_g.mon.set_text("Peers[" + Lambda.count(_g.neighbors) + "/" + ids.length + "]: ");
 					var $it0 = _g.neighbors.keys();
 					while( $it0.hasNext() ) {
 						var k = $it0.next();
 						var _g1 = _g.mon;
-						_g1.set_text(_g1.get_text() + ("\n#" + k + (k == id?"(me)":"")));
+						_g1.set_text(_g1.get_text() + ("\n#" + k + (k == id?" (you)":"")));
 					}
 				});
 				_g.peers.onDisconnect.add(function(neighbor1) {
@@ -431,7 +432,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 					while( $it1.hasNext() ) {
 						var k1 = $it1.next();
 						var _g11 = _g.mon;
-						_g11.set_text(_g11.get_text() + ("\n#" + k1 + (k1 == id?"(me)":"")));
+						_g11.set_text(_g11.get_text() + ("\n#" + k1 + (k1 == id?" (you)":"")));
 					}
 				});
 				var _g12 = 0;
@@ -444,22 +445,28 @@ Main.prototype = $extend(luxe_Game.prototype,{
 			},function(_1) {
 				_g.tryId(ids,++cur);
 			});
-		} else this.mon.set_text("No free id :c");
+		} else {
+			this.mon.set_text(" -> no free id :c");
+			Luxe.timer.schedule(10.0,function() {
+				_g.tryId(ids,0);
+			});
+		}
 	}
 	,onkeydown: function(event) {
 		var _g1 = this;
 		var _g = event.keycode;
 		switch(_g) {
 		case 49:
-			this.peers.broadcast("say",{ text : "Hi there!"});
-			break;
-		case 50:
-			Luxe.timer.schedule(5.0,function() {
+			roi_Logger.log(" -> start ping broadcasting (press key 2 to stop)");
+			this.sch = Luxe.timer.schedule(5.0,function() {
 				_g1.peers.broadcast("ping",{ ping : new Date().getTime()});
 			},true);
 			break;
+		case 50:
+			roi_Logger.log(" -> stop ping broadcasting");
+			this.sch.stop();
+			break;
 		default:
-			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 143, className : "Main", methodName : "onkeydown"});
 		}
 	}
 	,onkeyup: function(e) {
@@ -472,7 +479,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 		this.act(this.peers.peer.id,e.x * Luxe.core.screen.get_w(),e.y * Luxe.core.screen.get_h(),this.color);
 	}
 	,act: function(id,x,y,color) {
-		var data = { id : id, x : x, y : y, color : color};
+		var data = { id : id, x : x | 0, y : y | 0, color : color};
 		this.draw(data);
 		if(this.peers != null) this.peers.broadcast("mov",data);
 	}
@@ -10860,7 +10867,7 @@ roi_Logger.printer = function(str) {
 roi_Logger.log = function(a) {
 	roi_Logger.times.push(haxe_Timer.stamp() - roi_Logger.initStamp);
 	var i = roi_Logger.lines.push(Std.string(a)) - 1;
-	roi_Logger.tracer(roi_Logger.strstamp(roi_Logger.times[i]) + ": " + roi_Logger.lines[i] + "\n");
+	roi_Logger.tracer(roi_Logger.strstamp(roi_Logger.times[i]) + ": " + roi_Logger.lines[i]);
 };
 roi_Logger.printLast = function(count,printer) {
 	return roi_Logger.print(roi_Logger.lines.length - count,count,printer);
