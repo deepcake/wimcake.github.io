@@ -376,6 +376,7 @@ luxe_Game.prototype = $extend(luxe_Emitter.prototype,{
 var Main = function() {
 	this.neighbors = new haxe_ds_StringMap();
 	this.color = Std.random(16777215);
+	this.ids = ["1","2","3","4","5","6","7","8"];
 	this.key = "h225oppvxe83q5mi";
 	luxe_Game.call(this);
 };
@@ -392,50 +393,51 @@ Main.prototype = $extend(luxe_Game.prototype,{
 		Luxe.camera.set_viewport(new phoenix_Rectangle(0,0,e.event.x,e.event.y));
 	}
 	,ready: function() {
-		this.mon = new luxe_Text({ pos : new phoenix_Vector(0,0), align : 0, color : new phoenix_Color().rgb(this.color), point_size : 14, text : "Process..."});
-		var ids = ["1","2","3","4","5","6","7","8"];
-		this.tryId(ids,0);
+		var _g = this;
+		this.mon = new luxe_Text({ pos : new phoenix_Vector(5,0), align : 0, color : new phoenix_Color().rgb(this.color), point_size : 14, text : "Process..."});
+		this.rmon = new luxe_Text({ pos : new phoenix_Vector(5,Luxe.core.screen.get_h()), align : 0, align_vertical : 4, color : new phoenix_Color(0,0,0,.75).rgb(this.color), point_size : 14, text : "\n"});
+		roi_Logger.printer = function(str) {
+			_g.rmon.set_text("" + str);
+		};
+		roi_Logger.log("Ready");
+		this.tryId(this.ids,0);
 	}
 	,tryId: function(ids,cur) {
 		var _g = this;
 		if(cur < ids.length) {
 			var id = ids[cur];
-			this.peers = new roi_js_Peers(this.key).create(id,function(_) {
+			this.peers = new roi_js_Peers(this.key).join(id,function(_) {
 				_g.mon.set_text("Alone");
-				haxe_Log.trace(" -> got this one #" + id + " c:",{ fileName : "Main.hx", lineNumber : 75, className : "Main", methodName : "tryId"});
+				haxe_Log.trace(" -> got this one #" + id + " c:",{ fileName : "Main.hx", lineNumber : 90, className : "Main", methodName : "tryId"});
 				_g.peers.addCommand("say",function(t) {
-					haxe_Log.trace(" -> #" + t.id + " said " + t.text,{ fileName : "Main.hx", lineNumber : 76, className : "Main", methodName : "tryId"});
+					haxe_Log.trace(" -> #" + t.id + " said " + t.text,{ fileName : "Main.hx", lineNumber : 91, className : "Main", methodName : "tryId"});
 				});
 				_g.peers.addCommand("mov",$bind(_g,_g.draw));
 				_g.neighbors.set(id,{ x : 0, y : 0, color : _g.color});
 				_g.peers.onConnect.add(function(neighbor) {
 					_g.neighbors.set(neighbor,{ x : 0, y : 0, color : 8421504});
-					_g.mon.set_text("Peers:\n");
+					_g.mon.set_text("Peers[" + Lambda.count(_g.neighbors) + "]: ");
 					var $it0 = _g.neighbors.keys();
 					while( $it0.hasNext() ) {
 						var k = $it0.next();
 						var _g1 = _g.mon;
-						_g1.set_text(_g1.get_text() + (" #" + k + "\n"));
+						_g1.set_text(_g1.get_text() + ("\n#" + k + (k == id?"(me)":"")));
 					}
-					var _g11 = _g.mon;
-					_g11.set_text(_g11.get_text() + ("\nLast action: connect by #" + neighbor));
 				});
 				_g.peers.onDisconnect.add(function(neighbor1) {
 					_g.neighbors.remove(neighbor1);
-					_g.mon.set_text("Peers:\n");
+					_g.mon.set_text("Peers[" + Lambda.count(_g.neighbors) + "]: ");
 					var $it1 = _g.neighbors.keys();
 					while( $it1.hasNext() ) {
 						var k1 = $it1.next();
-						var _g12 = _g.mon;
-						_g12.set_text(_g12.get_text() + (" #" + k1 + "\n"));
+						var _g11 = _g.mon;
+						_g11.set_text(_g11.get_text() + ("\n#" + k1 + (k1 == id?"(me)":"")));
 					}
-					var _g13 = _g.mon;
-					_g13.set_text(_g13.get_text() + ("\nLast action: disconnect by #" + neighbor1));
 				});
-				var _g14 = 0;
-				while(_g14 < ids.length) {
-					var i = ids[_g14];
-					++_g14;
+				var _g12 = 0;
+				while(_g12 < ids.length) {
+					var i = ids[_g12];
+					++_g12;
 					if(i == id) continue;
 					_g.peers.connect(i);
 				}
@@ -457,7 +459,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 			},true);
 			break;
 		default:
-			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 130, className : "Main", methodName : "onkeydown"});
+			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 143, className : "Main", methodName : "onkeydown"});
 		}
 	}
 	,onkeyup: function(e) {
@@ -488,6 +490,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 		});
 	}
 	,update: function(dt) {
+		roi_Logger.printLast(20);
 	}
 	,__class__: Main
 });
@@ -10846,6 +10849,48 @@ phoenix_geometry_Vertex.__name__ = true;
 phoenix_geometry_Vertex.prototype = {
 	__class__: phoenix_geometry_Vertex
 };
+var roi_Logger = function() { };
+$hxClasses["roi.Logger"] = roi_Logger;
+roi_Logger.__name__ = true;
+roi_Logger.tracer = function(str) {
+	haxe_Log.trace(str,{ fileName : "Logger.hx", lineNumber : 17, className : "roi.Logger", methodName : "tracer"});
+};
+roi_Logger.printer = function(str) {
+};
+roi_Logger.log = function(a) {
+	roi_Logger.times.push(haxe_Timer.stamp() - roi_Logger.initStamp);
+	var i = roi_Logger.lines.push(Std.string(a)) - 1;
+	roi_Logger.tracer(roi_Logger.strstamp(roi_Logger.times[i]) + ": " + roi_Logger.lines[i] + "\n");
+};
+roi_Logger.printLast = function(count,printer) {
+	return roi_Logger.print(roi_Logger.lines.length - count,count,printer);
+};
+roi_Logger.print = function(pos,count,printer) {
+	pos = roi_Sup.trim(pos,0,roi_Logger.lines.length);
+	count = pos + count;
+	count = roi_Sup.trim(count,pos,roi_Logger.lines.length);
+	var ret = "";
+	var _g = pos;
+	while(_g < count) {
+		var i = _g++;
+		ret += roi_Logger.strstamp(roi_Logger.times[i]) + ": " + roi_Logger.lines[i] + "\n";
+	}
+	if(printer != null) printer(ret); else roi_Logger.printer(ret);
+	return ret;
+};
+roi_Logger.strstamp = function(time) {
+	var stamp;
+	if(time == null) stamp = "null"; else stamp = "" + time;
+	var dotpos = stamp.indexOf(".");
+	stamp = stamp.substring(0,dotpos + 4);
+	if(dotpos > -1) return StringTools.rpad(stamp,"0",dotpos + 4); else return "" + stamp + ".000";
+};
+var roi_Sup = function() { };
+$hxClasses["roi.Sup"] = roi_Sup;
+roi_Sup.__name__ = true;
+roi_Sup.trim = function(x,min,max) {
+	if(x < min) return min; else if(x > max) return max; else return x;
+};
 var roi_js_Peers = function(key) {
 	this.onDisconnect = new roi_signals_Signal1();
 	this.onConnect = new roi_signals_Signal1();
@@ -10858,23 +10903,23 @@ var roi_js_Peers = function(key) {
 $hxClasses["roi.js.Peers"] = roi_js_Peers;
 roi_js_Peers.__name__ = true;
 roi_js_Peers.prototype = {
-	create: function(id,success,fail) {
+	join: function(id,success,fail) {
 		this.peer = new Peer(id,{ key : this.key, config : { iceServers : roi_js_Peers.ICESERVERS}});
-		this.addPeer(this.peer,success,fail);
+		this.initPeer(this.peer,success,fail);
 		return this;
 	}
 	,connect: function(id) {
 		var c = this.peer.connect(id,{ });
 		this.addCon(c);
 	}
-	,addPeer: function(p,success,fail) {
+	,initPeer: function(p,success,fail) {
 		var _g = this;
 		p.on("open",function(data) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer opened",{ fileName : "Peers.hx", lineNumber : 88, className : "roi.js.Peers", methodName : "addPeer"});
+			roi_Logger.log("peer opened");
 			if(success != null) success();
 		});
 		p.on("close",function(data1) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer closed",{ fileName : "Peers.hx", lineNumber : 93, className : "roi.js.Peers", methodName : "addPeer"});
+			roi_Logger.log("peer closed");
 			p.removeListener("close");
 			p.removeListener("error");
 			p.removeListener("connection");
@@ -10886,39 +10931,38 @@ roi_js_Peers.prototype = {
 			var _g1 = err.type;
 			switch(_g1) {
 			case "peer-unavailable":
-				haxe_Log.trace("peer#" + _g.peer.id + "  -> peer error " + Std.string(err.type) + " " + Std.string(err),{ fileName : "Peers.hx", lineNumber : 109, className : "roi.js.Peers", methodName : "addPeer"});
+				roi_Logger.log("" + Std.string(err.type) + " " + Std.string(err));
 				break;
 			default:
-				haxe_Log.trace("peer#" + _g.peer.id + "  -> peer error " + Std.string(err.type) + " " + Std.string(err),{ fileName : "Peers.hx", lineNumber : 111, className : "roi.js.Peers", methodName : "addPeer"});
+				roi_Logger.log("" + Std.string(err.type) + " " + Std.string(err));
 			}
 		});
 		p.on("connection",function(c) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer #" + c.peer + " connected to me",{ fileName : "Peers.hx", lineNumber : 116, className : "roi.js.Peers", methodName : "addPeer"});
+			roi_Logger.log("peer #" + c.peer + " connected to me");
 			_g.addCon(c);
 		});
 		p.on("disconnected",function() {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> peer disconnected",{ fileName : "Peers.hx", lineNumber : 121, className : "roi.js.Peers", methodName : "addPeer"});
+			roi_Logger.log("peer disconnected");
 		});
 		return p;
 	}
 	,addCon: function(c) {
 		var _g = this;
 		c.on("open",function() {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> con opened with #" + c.peer,{ fileName : "Peers.hx", lineNumber : 132, className : "roi.js.Peers", methodName : "addCon"});
+			roi_Logger.log("con opened with #" + c.peer);
 			_g.connections.set(c.peer,c);
 			_g.onConnect.execute(c.peer);
 		});
 		c.on("close",function() {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> con closed with #" + c.peer,{ fileName : "Peers.hx", lineNumber : 138, className : "roi.js.Peers", methodName : "addCon"});
+			roi_Logger.log("con closed with #" + c.peer);
 			_g.onDisconnect.execute(c.peer);
 			_g.removeCon(c);
 		});
 		c.on("data",function(data) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> con data received",{ fileName : "Peers.hx", lineNumber : 144, className : "roi.js.Peers", methodName : "addCon"});
 			_g.receive(data);
 		});
 		c.on("error",function(err) {
-			haxe_Log.trace("peer#" + _g.peer.id + "  -> con error " + Std.string(err.type) + " " + Std.string(err),{ fileName : "Peers.hx", lineNumber : 149, className : "roi.js.Peers", methodName : "addCon"});
+			roi_Logger.log("" + Std.string(err.type) + " " + Std.string(err));
 		});
 	}
 	,removeCon: function(c) {
@@ -10959,7 +11003,7 @@ roi_js_Peers.prototype = {
 	,send: function(to,cmd,data) {
 		if(this.peer == null) return;
 		if(!this.connections.exists(to)) {
-			haxe_Log.trace("No connection with id #" + to,{ fileName : "Peers.hx", lineNumber : 194, className : "roi.js.Peers", methodName : "send"});
+			roi_Logger.log("No connection with id #" + to);
 			return;
 		}
 		data.cmd = cmd;
@@ -10968,11 +11012,11 @@ roi_js_Peers.prototype = {
 		this.connections.get(to).send(data);
 	}
 	,receivePing: function(data) {
-		haxe_Log.trace("peer#" + this.peer.id + "  -> #" + Std.string(data.id) + ": ping " + (new Date().getTime() - data.ping),{ fileName : "Peers.hx", lineNumber : 216, className : "roi.js.Peers", methodName : "receivePing"});
+		roi_Logger.log("pong -> #" + Std.string(data.id));
 		this.send(data.id,"pong",{ ping : data.ping, pong : new Date().getTime()});
 	}
 	,receivePong: function(data) {
-		haxe_Log.trace("peer#" + this.peer.id + "  -> #" + Std.string(data.id) + ": ping " + (data.pong - data.ping) + " pong " + (new Date().getTime() - data.pong) + " (" + (new Date().getTime() - data.ping) + ")",{ fileName : "Peers.hx", lineNumber : 223, className : "roi.js.Peers", methodName : "receivePong"});
+		roi_Logger.log("ping #" + Std.string(data.id) + " :: (" + (new Date().getTime() - data.ping) + ") ms");
 	}
 	,__class__: roi_js_Peers
 };
@@ -13538,6 +13582,9 @@ phoenix_Texture.default_filter = 9729;
 phoenix_Texture.default_clamp = 33071;
 phoenix_geometry_Geometry._sequence_key = -1;
 phoenix_geometry_TextGeometry.tab_regex = new EReg("\t","gim");
+roi_Logger.initStamp = haxe_Timer.stamp();
+roi_Logger.times = [];
+roi_Logger.lines = [];
 roi_js_Peers.ICESERVERS = [{ url : "stun:stun01.sipphone.com"},{ url : "stun:stun.ekiga.net"},{ url : "stun:stun.fwdnet.net"},{ url : "stun:stun.ideasip.com"},{ url : "stun:stun.iptel.org"},{ url : "stun:stun.rixtelecom.se"},{ url : "stun:stun.schlund.de"},{ url : "stun:stun.l.google.com:19302"},{ url : "stun:stun1.l.google.com:19302"},{ url : "stun:stun2.l.google.com:19302"},{ url : "stun:stun3.l.google.com:19302"},{ url : "stun:stun4.l.google.com:19302"},{ url : "stun:stunserver.org"},{ url : "stun:stun.softjoys.com"},{ url : "stun:stun.voiparound.com"},{ url : "stun:stun.voipbuster.com"},{ url : "stun:stun.voipstunt.com"},{ url : "stun:stun.voxgratia.org"},{ url : "stun:stun.xten.com"},{ url : "turn:numb.viagenie.ca", credential : "muazkh", username : "webrtc@live.com"},{ url : "turn:192.158.29.39:3478?transport=udp", credential : "JZEOEt2V3Qb0y27GRntt2u2PAYA=", username : "28224511:1379330808"},{ url : "turn:192.158.29.39:3478?transport=tcp", credential : "JZEOEt2V3Qb0y27GRntt2u2PAYA=", username : "28224511:1379330808"}];
 roi_js_Peers._sequence = 0;
 snow_api_Promises.calls = [];
