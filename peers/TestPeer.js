@@ -383,9 +383,14 @@ $hxClasses["Main"] = Main;
 Main.__name__ = true;
 Main.__super__ = luxe_Game;
 Main.prototype = $extend(luxe_Game.prototype,{
-	ready: function() {
-		this.mon = new luxe_Text({ pos : new phoenix_Vector(0,0), align : 0, color : new phoenix_Color().rgb(this.color), point_size : 14, text : "Alone"});
-		var ids = ["1","2","3","4","5","6","7"];
+	config: function(config) {
+		config.window.fullscreen = true;
+		config.window.title = "Peers";
+		return config;
+	}
+	,ready: function() {
+		this.mon = new luxe_Text({ pos : new phoenix_Vector(0,0), align : 0, color : new phoenix_Color().rgb(this.color), point_size : 14, text : "Process..."});
+		var ids = ["1","2","3","4","5","6","7","8"];
 		this.tryId(ids,0);
 	}
 	,tryId: function(ids,cur) {
@@ -393,9 +398,10 @@ Main.prototype = $extend(luxe_Game.prototype,{
 		if(cur < ids.length) {
 			var id = ids[cur];
 			this.peers = new roi_js_Peers(this.key).create(id,function(_) {
-				haxe_Log.trace(" -> got this one #" + id + " c:",{ fileName : "Main.hx", lineNumber : 52, className : "Main", methodName : "tryId"});
+				_g.mon.set_text("Alone");
+				haxe_Log.trace(" -> got this one #" + id + " c:",{ fileName : "Main.hx", lineNumber : 69, className : "Main", methodName : "tryId"});
 				_g.peers.addCommand("say",function(t) {
-					haxe_Log.trace(" -> #" + t.id + " said " + t.text,{ fileName : "Main.hx", lineNumber : 53, className : "Main", methodName : "tryId"});
+					haxe_Log.trace(" -> #" + t.id + " said " + t.text,{ fileName : "Main.hx", lineNumber : 70, className : "Main", methodName : "tryId"});
 				});
 				_g.peers.addCommand("mov",$bind(_g,_g.movCb));
 				_g.neighbors.set(id,{ x : 0, y : 0, color : _g.color});
@@ -409,7 +415,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 						_g1.set_text(_g1.get_text() + (" #" + k + "\n"));
 					}
 					var _g11 = _g.mon;
-					_g11.set_text(_g11.get_text() + ("\n\nLast action: connect by " + neighbor));
+					_g11.set_text(_g11.get_text() + ("\nLast action: connect by #" + neighbor));
 				});
 				_g.peers.onDisconnect.add(function(neighbor1) {
 					_g.neighbors.remove(neighbor1);
@@ -421,7 +427,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 						_g12.set_text(_g12.get_text() + (" #" + k1 + "\n"));
 					}
 					var _g13 = _g.mon;
-					_g13.set_text(_g13.get_text() + ("\n\nLast action: disconnect by " + neighbor1));
+					_g13.set_text(_g13.get_text() + ("\nLast action: disconnect by #" + neighbor1));
 				});
 				var _g14 = 0;
 				while(_g14 < ids.length) {
@@ -433,7 +439,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 			},function(_1) {
 				_g.tryId(ids,++cur);
 			});
-		} else haxe_Log.trace(" -> no free id :c",{ fileName : "Main.hx", lineNumber : 86, className : "Main", methodName : "tryId"});
+		} else this.mon.set_text("No free id :c");
 	}
 	,onkeydown: function(event) {
 		var _g1 = this;
@@ -448,7 +454,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 			},true);
 			break;
 		default:
-			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 105, className : "Main", methodName : "onkeydown"});
+			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 124, className : "Main", methodName : "onkeydown"});
 		}
 	}
 	,onkeyup: function(e) {
@@ -463,7 +469,7 @@ Main.prototype = $extend(luxe_Game.prototype,{
 	,movCb: function(d) {
 		if(!this.neighbors.exists(d.id)) this.neighbors.set(d.id,{ x : d.x, y : d.y, color : this.color});
 		var n = this.neighbors.get(d.id);
-		this.render(n.x,n.y,d.x,d.y,n.color);
+		this.render(n.x,n.y,d.x,d.y,d.color);
 		n.x = d.x;
 		n.y = d.y;
 	}
@@ -2401,7 +2407,7 @@ snow_App.prototype = {
 	,on_internal_render: function() {
 		if(this.render_rate != 0) {
 			if(this.render_rate < 0 || this.next_render < snow_Snow.core.timestamp()) {
-				this.app.render();
+				this.app.windowing.update();
 				this.next_render += this.render_rate;
 			}
 		}
@@ -11060,9 +11066,6 @@ snow_Snow.prototype = {
 		this.windowing.destroy();
 		snow_Snow.core.shutdown();
 		this.has_shutdown = true;
-	}
-	,render: function() {
-		this.windowing.update();
 	}
 	,dispatch_system_event: function(_event) {
 		this.on_event(_event);
