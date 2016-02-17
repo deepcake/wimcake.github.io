@@ -11023,7 +11023,7 @@ roi_js_Peers.prototype = {
 		this.send(data.id,"pong",{ ping : data.ping, pong : new Date().getTime()});
 	}
 	,receivePong: function(data) {
-		roi_Logger.log("ping #" + Std.string(data.id) + " :: (" + (new Date().getTime() - data.ping) + ") ms");
+		roi_Logger.log("ping #" + Std.string(data.id) + " :: " + (new Date().getTime() - data.ping) + " ms");
 	}
 	,__class__: roi_js_Peers
 };
