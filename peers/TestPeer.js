@@ -388,6 +388,9 @@ Main.prototype = $extend(luxe_Game.prototype,{
 		config.window.title = "Peers";
 		return config;
 	}
+	,onwindowsized: function(e) {
+		Luxe.camera.set_viewport(new phoenix_Rectangle(0,0,e.event.x,e.event.y));
+	}
 	,ready: function() {
 		this.mon = new luxe_Text({ pos : new phoenix_Vector(0,0), align : 0, color : new phoenix_Color().rgb(this.color), point_size : 14, text : "Process..."});
 		var ids = ["1","2","3","4","5","6","7","8"];
@@ -399,11 +402,11 @@ Main.prototype = $extend(luxe_Game.prototype,{
 			var id = ids[cur];
 			this.peers = new roi_js_Peers(this.key).create(id,function(_) {
 				_g.mon.set_text("Alone");
-				haxe_Log.trace(" -> got this one #" + id + " c:",{ fileName : "Main.hx", lineNumber : 69, className : "Main", methodName : "tryId"});
+				haxe_Log.trace(" -> got this one #" + id + " c:",{ fileName : "Main.hx", lineNumber : 75, className : "Main", methodName : "tryId"});
 				_g.peers.addCommand("say",function(t) {
-					haxe_Log.trace(" -> #" + t.id + " said " + t.text,{ fileName : "Main.hx", lineNumber : 70, className : "Main", methodName : "tryId"});
+					haxe_Log.trace(" -> #" + t.id + " said " + t.text,{ fileName : "Main.hx", lineNumber : 76, className : "Main", methodName : "tryId"});
 				});
-				_g.peers.addCommand("mov",$bind(_g,_g.movCb));
+				_g.peers.addCommand("mov",$bind(_g,_g.draw));
 				_g.neighbors.set(id,{ x : 0, y : 0, color : _g.color});
 				_g.peers.onConnect.add(function(neighbor) {
 					_g.neighbors.set(neighbor,{ x : 0, y : 0, color : 8421504});
@@ -454,37 +457,24 @@ Main.prototype = $extend(luxe_Game.prototype,{
 			},true);
 			break;
 		default:
-			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 124, className : "Main", methodName : "onkeydown"});
+			haxe_Log.trace("no act for this key",{ fileName : "Main.hx", lineNumber : 130, className : "Main", methodName : "onkeydown"});
 		}
 	}
 	,onkeyup: function(e) {
 		if(e.keycode == snow_system_input_Keycodes.escape) Luxe.shutdown();
 	}
 	,onmousemove: function(e) {
-		if(this.peers != null) {
-			this.peers.broadcast("mov",{ x : e.x, y : e.y, color : this.color});
-			this.movCb({ id : this.peers.peer.id, x : e.x, y : e.y, color : this.color});
-		}
-	}
-	,onmousedown: function(e) {
-		if(this.peers != null) {
-			this.peers.broadcast("mov",{ x : e.x, y : e.y, color : this.color});
-			this.movCb({ id : this.peers.peer.id, x : e.x, y : e.y, color : this.color});
-		}
-	}
-	,onmouseup: function(e) {
-		if(this.peers != null) {
-			this.peers.broadcast("mov",{ x : e.x, y : e.y, color : this.color});
-			this.movCb({ id : this.peers.peer.id, x : e.x, y : e.y, color : this.color});
-		}
+		this.act(this.peers.peer.id,e.x,e.y,this.color);
 	}
 	,ontouchmove: function(e) {
-		if(this.peers != null) {
-			this.peers.broadcast("mov",{ x : e.x, y : e.y, color : this.color});
-			this.movCb({ id : this.peers.peer.id, x : e.x, y : e.y, color : this.color});
-		}
+		this.act(this.peers.peer.id,e.x * Luxe.core.screen.get_w(),e.y * Luxe.core.screen.get_h(),this.color);
 	}
-	,movCb: function(d) {
+	,act: function(id,x,y,color) {
+		var data = { id : id, x : x, y : y, color : color};
+		this.draw(data);
+		if(this.peers != null) this.peers.broadcast("mov",data);
+	}
+	,draw: function(d) {
 		if(!this.neighbors.exists(d.id)) this.neighbors.set(d.id,{ x : d.x, y : d.y, color : this.color});
 		var n = this.neighbors.get(d.id);
 		this.render(n.x,n.y,d.x,d.y,d.color);
