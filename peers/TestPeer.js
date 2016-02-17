@@ -466,6 +466,12 @@ Main.prototype = $extend(luxe_Game.prototype,{
 			this.movCb({ id : this.peers.peer.id, x : e.x, y : e.y, color : this.color});
 		}
 	}
+	,ontouchmove: function(e) {
+		if(this.peers != null) {
+			this.peers.broadcast("mov",{ x : e.x, y : e.y, color : this.color});
+			this.movCb({ id : this.peers.peer.id, x : e.x, y : e.y, color : this.color});
+		}
+	}
 	,movCb: function(d) {
 		if(!this.neighbors.exists(d.id)) this.neighbors.set(d.id,{ x : d.x, y : d.y, color : this.color});
 		var n = this.neighbors.get(d.id);
