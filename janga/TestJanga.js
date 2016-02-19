@@ -118,6 +118,7 @@ luxe_State.prototype = $extend(luxe_ID.prototype,{
 var Game = function() {
 	this.putiny = 0;
 	this.putouty = 0;
+	this.state = 0;
 	this.B33 = [[true,true,true],[true,true,true],[true,true,true]];
 	this.B44 = [[true,true,true,true],[true,true,true,true],[true,true,true,true],[true,true,true,true]];
 	this.B55 = [[true,true,true,true,true],[true,true,true,true,true],[true,true,true,true,true],[true,true,true,true,true],[true,true,true,true,true]];
@@ -522,8 +523,14 @@ Game.prototype = $extend(luxe_State.prototype,{
 	,onmousedown: function(e) {
 		if(this.bod == null) this.putout(e.x,e.y); else this.putin(e.x,e.y);
 	}
+	,ontouchdown: function(e) {
+		if(this.state == 0) this.state = 1;
+	}
 	,ontouchup: function(e) {
-		if(this.bod == null) this.putout(e.x * Luxe.core.screen.width,e.y * Luxe.core.screen.height); else this.putin(e.x * Luxe.core.screen.width,e.y * Luxe.core.screen.height);
+		if(this.state == 1) {
+			if(this.bod == null) this.putout(e.x * Luxe.core.screen.width,e.y * Luxe.core.screen.height); else this.putin(e.x * Luxe.core.screen.width,e.y * Luxe.core.screen.height);
+			this.state = 0;
+		}
 	}
 	,onmousemove: function(e) {
 		this.putiny = e.y;
