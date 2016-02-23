@@ -157,7 +157,10 @@ Game.prototype = $extend(luxe_State.prototype,{
 		roi_Logger.printer = function(str) {
 			_g.rmon.set_text("" + str);
 		};
-		roi_Logger.log(" -> ready");
+		roi_Logger.tracer = function(str1) {
+			haxe_Log.trace(" -> " + str1,{ fileName : "Game.hx", lineNumber : 79, className : "Game", methodName : "initLogger"});
+		};
+		roi_Logger.log("ready");
 	}
 	,init: function() {
 		var _g = this;
@@ -180,7 +183,8 @@ Game.prototype = $extend(luxe_State.prototype,{
 		var blocksCount = 0;
 		var th = 56;
 		var tw = 24;
-		var sz = 10.0;
+		var sz = roi_Sup.fmin(w * .25 / tw,h * .5 / th);
+		roi_Logger.log("size: " + sz);
 		var thpx = th * sz;
 		var twpx = tw * sz;
 		var offset = .99;
@@ -15660,6 +15664,9 @@ $hxClasses["roi.Sup"] = roi_Sup;
 roi_Sup.__name__ = ["roi","Sup"];
 roi_Sup.trim = function(x,min,max) {
 	if(x < min) return min; else if(x > max) return max; else return x;
+};
+roi_Sup.fmin = function(a,b) {
+	if(a < b) return a; else return b;
 };
 var roi_ds_DoublyLinkedList = function() {
 	this.count = 0;
