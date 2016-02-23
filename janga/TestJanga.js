@@ -153,7 +153,7 @@ Game.prototype = $extend(luxe_State.prototype,{
 	initLogger: function() {
 		var _g = this;
 		this.mon = new luxe_Text({ pos : new phoenix_Vector(5,0), align : 0, color : new phoenix_Color().rgb(15790320), point_size : 14, text : "test"});
-		this.rmon = new luxe_Text({ pos : new phoenix_Vector(5,Luxe.core.screen.get_h()), align : 0, align_vertical : 4, color : new phoenix_Color(0,0,0,.75).rgb(15790320), point_size : 14, text : "\n"});
+		this.rmon = new luxe_Text({ pos : new phoenix_Vector(5,Luxe.core.screen.get_h()), align : 0, align_vertical : 4, color : new phoenix_Color(0,0,0,.75).rgb(15790320), point_size : 18, text : "\n"});
 		roi_Logger.printer = function(str) {
 			_g.rmon.set_text("" + str);
 		};
@@ -178,9 +178,9 @@ Game.prototype = $extend(luxe_State.prototype,{
 			_g.space.zpp_inner.wrap_bodies.remove(n1.b);
 		});
 		var blocksCount = 0;
-		var th = 64;
-		var tw = 28;
-		var sz = 8.0;
+		var th = 56;
+		var tw = 24;
+		var sz = 10.0;
 		var thpx = th * sz;
 		var twpx = tw * sz;
 		var offset = .99;
@@ -456,7 +456,6 @@ Game.prototype = $extend(luxe_State.prototype,{
 		b.zpp_inner.wrap_shapes.add(sh);
 		this.ch.addEntity(new roi_ecs_Entity().add(b).add(new systems_Trigger(function(e) {
 			_g.ch.removeEntity(e);
-			roi_Logger.log("body removed");
 		})));
 	}
 	,chkMask: function(tar,posx,posy,mask) {
