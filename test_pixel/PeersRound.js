@@ -426,8 +426,8 @@ Main.prototype = $extend(luxe_Game.prototype,{
 	}
 	,ready: function() {
 		var _g = this;
-		this.mon = new luxe_Text({ pos : new phoenix_Vector(5,0), align : 0, color : new phoenix_Color().rgb(this.color), point_size : 14, text : "Process..."});
-		this.rmon = new luxe_Text({ pos : new phoenix_Vector(5,Luxe.core.screen.get_h()), align : 0, align_vertical : 4, color : new phoenix_Color(0,0,0,.75).rgb(this.color), point_size : 18, text : "\n"});
+		this.mon = new luxe_Text({ pos : new phoenix_Vector(5,0), align : 0, color : new phoenix_Color().rgb(this.color), point_size : 14 * Luxe.core.screen.get_device_pixel_ratio(), text : "Process..."});
+		this.rmon = new luxe_Text({ pos : new phoenix_Vector(5,Luxe.core.screen.get_h()), align : 0, align_vertical : 4, color : new phoenix_Color(0,0,0,.75).rgb(this.color), point_size : 14 * Luxe.core.screen.get_device_pixel_ratio(), text : "\n"});
 		roi_Logger.printer = function(str) {
 			_g.rmon.set_text("" + str);
 		};
