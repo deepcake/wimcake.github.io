@@ -156,7 +156,7 @@ Janga.prototype = {
 		haxe_Log.trace("Blocks: " + this.blocks.length,{ fileName : "Janga.hx", lineNumber : 119, className : "Janga", methodName : "build"});
 		this.createBorder(posx,posy,w,20);
 		this.createBorder(-1000,posy + 20,2000,20);
-		this.stamp = this.packAll();
+		this.blocksstamp = this.packAll();
 	}
 	,createBlock: function(x,y,h,v,s,i) {
 		var verts = [nape_geom_Vec2.get(x,y,null),nape_geom_Vec2.get(x + h * s,y,null),nape_geom_Vec2.get(x + h * s,y - v * s,null),nape_geom_Vec2.get(x,y - v * s,null)];
@@ -617,8 +617,9 @@ LuxeFixJangaClient.prototype = $extend(luxe_State.prototype,{
 		roi_Logger.log("Upd turn");
 	}
 	,onUpdatePhysics: function(t) {
-		roi_Logger.log("get " + t.c);
-		this.janga.unpackAll(t.a);
+		roi_Logger.log("upd " + roi_Logger.stringifyStamp(haxe_Timer.stamp() - this.prevUpd) + " ms");
+		this.prevUpd = haxe_Timer.stamp();
+		this.janga.unpackAll(t);
 	}
 	,add: function(b) {
 		var s;
