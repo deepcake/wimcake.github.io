@@ -206,27 +206,31 @@ Janga.prototype = {
 		this.space.zpp_inner.wrap_bodies.add(b);
 	}
 	,pack: function(b) {
-		return { i : this.ids.h[b.__id__], x : ((function($this) {
+		return [this.ids.h[b.__id__],this.floattrim(((function($this) {
 			var $r;
 			if(b.zpp_inner.wrap_pos == null) b.zpp_inner.setupPosition();
 			$r = b.zpp_inner.wrap_pos;
 			return $r;
-		}(this))).get_x(), y : ((function($this) {
+		}(this))).get_x()),this.floattrim(((function($this) {
 			var $r;
 			if(b.zpp_inner.wrap_pos == null) b.zpp_inner.setupPosition();
 			$r = b.zpp_inner.wrap_pos;
 			return $r;
-		}(this))).get_y(), a : b.zpp_inner.rot};
+		}(this))).get_y()),this.floattrim(b.zpp_inner.rot,100)];
+	}
+	,floattrim: function(v,l) {
+		if(l == null) l = 10;
+		return (v * l | 0) / l;
 	}
 	,unpack: function(b) {
-		var block = this.blocks[b.i];
+		var block = this.blocks[b[0]];
 		((function($this) {
 			var $r;
 			if(block.zpp_inner.wrap_pos == null) block.zpp_inner.setupPosition();
 			$r = block.zpp_inner.wrap_pos;
 			return $r;
-		}(this))).setxy(b.x,b.y);
-		block.set_rotation(b.a);
+		}(this))).setxy(b[1],b[2]);
+		block.set_rotation(b[3]);
 	}
 	,packAll: function() {
 		var _g = [];
@@ -530,6 +534,9 @@ var LuxeFixJangaClient = function() {
 	this.client.events.on("#",$bind(this,this.onUpdateState));
 	this.client.events.on(";",$bind(this,this.onUpdateTurn));
 	this.client.events.on("*",$bind(this,this.onUpdatePhysics));
+	this.client.events.on("+",$bind(this,this.onUpdateBlock));
+	this.client.events.on("[",$bind(this,this.onGetAccepted));
+	this.client.events.on("]",$bind(this,this.onPutAccepted));
 	this.client.events.on("%",function(t) {
 		_g.client.send("^",t);
 	});
@@ -575,7 +582,6 @@ LuxeFixJangaClient.prototype = $extend(luxe_State.prototype,{
 			p.x = pos.x;
 			p.y = pos.y;
 		}
-		roi_Logger.log("upd in " + (haxe_Timer.stamp() - this.prevUpdMouse) + " ms");
 		this.prevUpdMouse = haxe_Timer.stamp();
 	}
 	,line: function(x1,y1,x2,y2,color) {
@@ -612,14 +618,43 @@ LuxeFixJangaClient.prototype = $extend(luxe_State.prototype,{
 		roi_Logger.log("Upd state");
 	}
 	,onUpdateTurn: function(t) {
+		var _g = this;
 		this.turn = t.turn;
 		this.round = t.round;
+		this.turnid = t.turnid;
+		if(this.turnid == this._id) {
+			roi_Logger.log("start broadcasting mov");
+			this.schMov = Luxe.timer.schedule(.1,function() {
+				if(_g.bod != null) {
+					_g.bMov(_g.mousex - _g.xoffset,_g.mousey - _g.yoffset);
+					_g.client.send("-",{ b : _g.janga.pack(_g.bod), space : false});
+				}
+			},true);
+		} else {
+			this.schMov.stop();
+			this.schMov = null;
+		}
 		roi_Logger.log("Upd turn");
 	}
 	,onUpdatePhysics: function(t) {
-		roi_Logger.log("upd " + roi_Logger.stringifyStamp(haxe_Timer.stamp() - this.prevUpd) + " ms");
 		this.prevUpd = haxe_Timer.stamp();
 		this.janga.unpackAll(t);
+	}
+	,onUpdateBlock: function(t) {
+		roi_Logger.log("upd mov " + Std.string(t));
+		this.janga.unpack(t.b);
+	}
+	,onGetAccepted: function(t) {
+		roi_Logger.log("get accepted");
+		this.janga.unpack(t.b);
+		this.janga.blocks[t.b[0]].zpp_inner.wrap_shapes.at(0).set_sensorEnabled(true);
+		this.bod = this.janga.blocks[t.b[0]];
+	}
+	,onPutAccepted: function(t) {
+		roi_Logger.log("put accepted");
+		this.janga.unpack(t.b);
+		this.janga.blocks[t.b[0]].zpp_inner.wrap_shapes.at(0).set_sensorEnabled(false);
+		this.bod = null;
 	}
 	,add: function(b) {
 		var s;
@@ -742,23 +777,32 @@ LuxeFixJangaClient.prototype = $extend(luxe_State.prototype,{
 			var i;
 			_g.zpp_critical = false;
 			i = _g.zpp_inner.at(_g.zpp_i++);
-			this.bod = i;
-			this.bod.set_space(null);
-			this.gety = this.bod.get_position().get_y();
 			roi_Logger.log("get at " + this.gety + " height");
-			this.client.send("(",{ b : this.janga.pack(this.bod)});
+			this.client.send("(",{ b : this.janga.pack(i), space : false});
+			roi_Logger.log("send get ");
 			break;
 		}
 	}
 	,bPut: function(x,y) {
+		this.client.send(")",{ b : this.janga.pack(this.bod), space : true});
+		roi_Logger.log("send put ");
+	}
+	,bMov: function(x,y) {
 		this.bod.get_position().setxy(x,y);
-		this.bod.set_space(this.space);
-		this.client.send(")",{ b : this.janga.pack(this.bod)});
-		this.bod = null;
 	}
 	,onmousedown: function(e) {
-		roi_Logger.log("mouse down");
-		if(this.bod == null) this.bGet(e.x - this.xoffset,e.y - this.yoffset); else this.bPut(e.x - this.xoffset,e.y - this.yoffset);
+		if(this.turnid == this._id) {
+			roi_Logger.log("mouse down");
+			if(this.bod == null) this.bGet(e.x - this.xoffset,e.y - this.yoffset); else this.bPut(e.x - this.xoffset,e.y - this.yoffset);
+		}
+	}
+	,onmousemove: function(e) {
+		this.mousex = e.x;
+		this.mousey = e.y;
+	}
+	,ontouchmove: function(e) {
+		this.mousex = e.x * Luxe.core.screen.get_w();
+		this.mousey = e.y * Luxe.core.screen.get_h();
 	}
 	,__class__: LuxeFixJangaClient
 });
@@ -11116,17 +11160,6 @@ nape_phys_Body.prototype = $extend(nape_phys_Interactor.prototype,{
 		}
 		return zpp_$nape_phys_ZPP_$Body.types[this.zpp_inner.type];
 	}
-	,set_space: function(space) {
-		if(this.zpp_inner.compound != null) throw new js__$Boot_HaxeError("Error: Cannot set the space of a Body belonging to a Compound, only the root Compound space can be set");
-		this.zpp_inner.immutable_midstep("Body::space");
-		if(this.zpp_inner.world) throw new js__$Boot_HaxeError("Error: Space::world is immutable");
-		if((this.zpp_inner.space == null?null:this.zpp_inner.space.outer) != space) {
-			if((this.zpp_inner.space == null?null:this.zpp_inner.space.outer) != null) this.zpp_inner.component.woken = false;
-			if((this.zpp_inner.space == null?null:this.zpp_inner.space.outer) != null) (this.zpp_inner.space == null?null:this.zpp_inner.space.outer).zpp_inner.wrap_bodies.remove(this);
-			if(space != null) space.zpp_inner.wrap_bodies.add(this);
-		}
-		if(this.zpp_inner.space == null) return null; else return this.zpp_inner.space.outer;
-	}
 	,get_position: function() {
 		if(this.zpp_inner.wrap_pos == null) this.zpp_inner.setupPosition();
 		return this.zpp_inner.wrap_pos;
@@ -11147,7 +11180,7 @@ nape_phys_Body.prototype = $extend(nape_phys_Interactor.prototype,{
 		return (this.zpp_inner.world?"(space::world":"(" + (this.zpp_inner.type == zpp_$nape_util_ZPP_$Flags.id_BodyType_DYNAMIC?"dynamic":this.zpp_inner.type == zpp_$nape_util_ZPP_$Flags.id_BodyType_STATIC?"static":"kinematic")) + ")#" + this.zpp_inner_i.id;
 	}
 	,__class__: nape_phys_Body
-	,__properties__: {set_rotation:"set_rotation",get_position:"get_position",set_space:"set_space",set_type:"set_type"}
+	,__properties__: {set_rotation:"set_rotation",get_position:"get_position",set_type:"set_type"}
 });
 var nape_phys_BodyIterator = function() {
 	this.zpp_next = null;
@@ -11742,13 +11775,19 @@ nape_shape_Shape.prototype = $extend(nape_phys_Interactor.prototype,{
 		}
 		return this.zpp_inner.wrap_localCOM;
 	}
+	,set_sensorEnabled: function(sensorEnabled) {
+		this.zpp_inner.immutable_midstep("Shape::sensorEnabled");
+		this.zpp_inner.sensorEnabled = sensorEnabled;
+		this.zpp_inner.wake();
+		return this.zpp_inner.sensorEnabled;
+	}
 	,toString: function() {
 		var ret;
 		if(this.zpp_inner.type == zpp_$nape_util_ZPP_$Flags.id_ShapeType_CIRCLE) ret = "Circle"; else ret = "Polygon";
 		return ret + "#" + this.zpp_inner_i.id;
 	}
 	,__class__: nape_shape_Shape
-	,__properties__: {get_localCOM:"get_localCOM"}
+	,__properties__: {set_sensorEnabled:"set_sensorEnabled",get_localCOM:"get_localCOM"}
 });
 var nape_shape_Circle = function() {
 	this.zpp_inner_zn = null;
